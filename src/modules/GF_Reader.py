@@ -141,50 +141,33 @@ class GF_Reader:
  
         
 
-    def get_placa(self, pages):
+    def get_placa(self, pages, label=""):
 
-        try:
-            placa1 = []
-            placa2 = []
-            placa3 = []
-            placas_label = ['Placa 1', 'Placa 2', 'Placa 3', 'Placa 4']
-            placas = []
+        for pg in pages:
+            for line in pg.split("\n"):
+                placa1_match = re.search(r'Placa 1: +([A-Z]{3}[0-9][0-9A-Z][0-9]{2})', line)
+                placa2_match = re.search(r'Placa 2: +([A-Z]{3}[0-9][0-9A-Z][0-9]{2})', line)
+                placa3_match = re.search(r'Placa 3: +([A-Z]{3}[0-9][0-9A-Z][0-9]{2})', line)
+                placa4_match = re.search(r'Placa 4: +([A-Z]{3}[0-9][0-9A-Z][0-9]{2})', line)
 
-            for pg in pages:
-                for line in pg.split("\n"):
+                if placa1_match is not None:
+                    placa1 = placa1_match.group()
+                
+                if placa2_match is not None:
+                    placa2 = placa2_match.group()
+                
+                if placa3_match is not None:
+                    placa3 = placa3_match.group()
+                
+                if placa4_match is not None:
+                    placa4 = placa4_match.group()
 
-                    for label in placas_label:
-
-                        placa = re.search(label+ ":", line)
-
-                        if placa is not None:
-                          
-                            start_placa = line[placa.end():]
-                            
-                            if label == 'Placa 4':
-                                placas.append({
-                                    label:start_placa[:-1].strip()
-                                })  #
-                                
-
-                            end_placa = re.search(",", start_placa)
-
-                            if end_placa is not None:
-
-                                placa = start_placa[:end_placa.end()].strip().replace(",", "")
-                                
-                                
-                                if placa_validate(placa) == True:
-                                    placas.append({
-                                        label:placa
-                                    })  # obtem todas as placas das guia conforme label
-
-            return placas
-
-
-        except Exception as e:
-            print(e)
-            return None
+            return {
+                "Placa 1":placa1.replace("Placa 1:", "").strip(),
+                "Placa 2":placa2.replace("Placa 2:", "").strip(),
+                "Placa 3":placa3.replace("Placa 3:", "").strip(),
+                "Placa 4":placa4.replace("Placa 4:", "").strip()
+            }
 
 
 

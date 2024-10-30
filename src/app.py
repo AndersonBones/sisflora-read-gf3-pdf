@@ -2,7 +2,7 @@
 from modules.GF_Reader import GF_Reader
 from modules.Utils import get_dataframe_from_dict, export_to_excel
 
-gf_reader = GF_Reader(r"F:\Programing Projects\Python\sisflora-read-gf3-pdf\src\docs\GFs\Gf Teste.pdf")
+gf_reader = GF_Reader(r"F:\Programing Projects\Python\sisflora-read-gf3-pdf\src\docs\GFs\GF205761 NF4232.pdf")
 
 doc = gf_reader.get_doc()
 pages = gf_reader.get_pages_from_docs(doc)
