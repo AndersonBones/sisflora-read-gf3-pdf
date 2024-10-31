@@ -7,7 +7,7 @@ from validate_docbr import CNPJ, CPF
 
 from modules.Utils import date_validate
 
-path = r"C:\Users\Anderson\Desktop\Python\python pdf\src\docs\Notas"
+path = r"C:\Users\anderson.bones\Desktop\Projetos\Python\sisflora-read-gf3-pdf\src\docs\Notas"
 
 
 

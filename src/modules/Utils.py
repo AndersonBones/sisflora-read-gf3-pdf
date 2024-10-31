@@ -18,6 +18,7 @@ def to_brl_currency(valor):
     valor = locale.currency(valor, grouping=True, symbol=None)
     return valor
 
+
 def placa_validate(placa) -> bool:
 
     placa = placa.replace("-", "") # remove o traço
@@ -158,6 +159,8 @@ def get_nome_remetente_ou__nome_destinatario(text):
             return text[nome_label_position:cnpj_label_position].replace(",", "").strip()
     except:
         return ""
+    
+
 
 def get_cnpj_remetente_ou_cnpj_destinatario(text):
     try:

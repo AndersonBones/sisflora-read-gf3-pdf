@@ -142,37 +142,62 @@ class GF_Reader:
         
 
     def get_placa(self, pages, label=""):
+        
+        placa1=''
+        placa2=''
+        placa3=''
+        placa4=''
 
         for pg in pages:
             for line in pg.split("\n"):
-                placa1_match = re.search(r'Placa 1: +([A-Z]{3}[0-9][0-9A-Z][0-9]{2})', line)
-                placa2_match = re.search(r'Placa 2: +([A-Z]{3}[0-9][0-9A-Z][0-9]{2})', line)
-                placa3_match = re.search(r'Placa 3: +([A-Z]{3}[0-9][0-9A-Z][0-9]{2})', line)
-                placa4_match = re.search(r'Placa 4: +([A-Z]{3}[0-9][0-9A-Z][0-9]{2})', line)
+                
+                try:
+                    placa1_match = re.search(r'Placa 1: +([A-Z]{3}[0-9][0-9A-Z][0-9]{2})', line)
+                    
+                    if placa1_match is not None and placa_validate(placa1_match.group().replace("Placa 1:", "").strip()) == True:
+                        placa1 = placa1_match.group().replace("Placa 1:", "").strip()
+                except Exception as e:
+                    placa1 = ''
+                
 
-                if placa1_match is not None:
-                    placa1 = placa1_match.group()
+                try:
+                    placa2_match = re.search(r'Placa 2: +([A-Z]{3}[0-9][0-9A-Z][0-9]{2})', line)
+                    
+                    if placa2_match is not None:
+                        placa2 = placa2_match.group().replace("Placa 2:", "").strip()
+                except Exception as e:
+                    placa2 = ''
                 
-                if placa2_match is not None:
-                    placa2 = placa2_match.group()
+
+                try:
+                    placa3_match = re.search(r'Placa 3: +([A-Z]{3}[0-9][0-9A-Z][0-9]{2})', line)
+                    
+                    if placa3_match is not None:
+                        placa3 = placa3_match.group().replace("Placa 3:", "").strip()
+                except Exception as e:
+                    placa3 = ''
                 
-                if placa3_match is not None:
-                    placa3 = placa3_match.group()
-                
-                if placa4_match is not None:
-                    placa4 = placa4_match.group()
+
+                try:
+                    placa4_match = re.search(r'Placa 4: +([A-Z]{3}[0-9][0-9A-Z][0-9]{2})', line)
+                    
+                    if placa4_match is not None:
+                        placa4 = placa4_match.group().replace("Placa 4:", "").strip()
+                except Exception as e:
+                    placa4 = ''
+
 
             return {
-                "Placa 1":placa1.replace("Placa 1:", "").strip(),
-                "Placa 2":placa2.replace("Placa 2:", "").strip(),
-                "Placa 3":placa3.replace("Placa 3:", "").strip(),
-                "Placa 4":placa4.replace("Placa 4:", "").strip()
+                "Placa 1":placa1,
+                "Placa 2":placa2,
+                "Placa 3":placa3,
+                "Placa 4":placa4
             }
 
 
 
 
-    def get_remetente_ou_destinatario(self, pages, option= "Remetente" or "Destinatário"):
+    def get_remetente_ou_destinatario(self, page, option= "Remetente" or "Destinatário"):
 
         self.cnpj = CNPJ()
         self.cpf = CPF()
@@ -182,46 +207,51 @@ class GF_Reader:
             nome_remetente = []
 
             data = {
-                "cnpj_cpf": [],
-                "remetente": []
+                "Cnpj_Cpf": '',
+                "Remetente": ''
             }
 
             try:
-                for page in pages:
-                    for text in page:
-                        remetente = re.search(option + ":", text)
-                        ie = re.search("Inscrição Estadual", text)
+               
+                for pg in page:
+                    remetente = re.search(option + ":", pg)
+                    ie = re.search("Inscrição Estadual", pg)
 
-                        if remetente is not None and ie is not None:
-                            if (self.cnpj.validate(get_cnpj_remetente_ou_cnpj_destinatario(text[remetente.end(): ie.start()])) == True or
-                                    self.cpf.validate(get_cnpj_remetente_ou_cnpj_destinatario(text[remetente.end(): ie.start()])) == True):
+                    if remetente is not None and ie is not None:
+                        if (self.cnpj.validate(get_cnpj_remetente_ou_cnpj_destinatario(pg[remetente.end(): ie.start()])) == True or
+                                self.cpf.validate(get_cnpj_remetente_ou_cnpj_destinatario(pg[remetente.end(): ie.start()])) == True):
 
-                                cnpj_cpf_list.append(get_cnpj_remetente_ou_cnpj_destinatario(text[remetente.end(): ie.start()]))
+                            cnpj_cpf_list.append(get_cnpj_remetente_ou_cnpj_destinatario(pg[remetente.end(): ie.start()]))
 
-                            nome_remetente.append(get_nome_remetente_ou__nome_destinatario(text[remetente.end(): ie.start()]))
+                        nome_remetente.append(get_nome_remetente_ou__nome_destinatario(pg[remetente.end(): ie.start()]))
 
-                    data["remetente"].append(sorted(set(nome_remetente))[-1])
-                    data["cnpj_cpf"].append(sorted(set(cnpj_cpf_list))[-1])
+                data["Remetente"] = sorted(set(nome_remetente))[-1]
+                data["Cnpj_Cpf"] = sorted(set(cnpj_cpf_list))[-1]
 
                 return data
             except:
-                return []
+
+                return {
+                "Cnpj_Cpf": '',
+                "Remetente": ''
+            }
+
 
         if option == "Destinatário":
             cnpj_cpf_list = []
             nome_destinatario = []
 
             data = {
-                "cnpj_cpf": [],
-                "destinatário": []
+                "Cnpj_Cpf": [],
+                "Destinatário": []
             }
 
-            for page in pages:
-                for text in page:
-                    destinatario_area = re.search(option + ":", text)
+            try:
+                for pg in page:
+                    destinatario_area = re.search(option + ":", pg)
 
                     if destinatario_area is not None:
-                        destinatario_area_after_laber = text[destinatario_area.end():]
+                        destinatario_area_after_laber = pg[destinatario_area.end():]
 
                         ie = re.search("Inscrição Estadual", destinatario_area_after_laber)
 
@@ -233,13 +263,22 @@ class GF_Reader:
 
                         nome_destinatario.append(get_nome_remetente_ou__nome_destinatario(destinatario_area_after_laber[: ie.start()]))
 
-                data["destinatário"].append(sorted(set(nome_destinatario))[-1])
-                data["cnpj_cpf"].append(sorted(set(cnpj_cpf_list))[-1])
+                data["Destinatário"] = sorted(set(nome_destinatario))[-1]
+                data["Cnpj_Cpf"] = sorted(set(cnpj_cpf_list))[-1]
 
-            return data
-
+                return data
+            except Exception as e:
+                return {
+                    "Cnpj_Cpf": '',
+                    "Destinatário": ''
+                }
+        
         else:
-            return []
+           {
+               "Cnpj_Cpf": '',
+                "Destinatário": ''
+           }
+
 
     def get_gf_link(self):
         links = []
