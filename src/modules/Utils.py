@@ -137,6 +137,7 @@ def get_value_from_table(path="", label=""):
             lote_from_line = ""
             lotes_from_page=""
 
+            
             for index in range(0, len(column.tolist())-1, 2):
                 if len(column.tolist()) % 2 == 0:
                     lote_from_line = f"{column[index]+column[index+1]}| "
