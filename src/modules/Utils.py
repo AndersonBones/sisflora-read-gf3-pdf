@@ -6,10 +6,18 @@ import io
 import pandas as pd
 from tabula import read_pdf
 import locale
+import os
 
 import validators
 from spire.pdf import *
-from qreader import QReader
+# qreader / pyzbar is optional: try to import, otherwise we'll use an OpenCV fallback
+try:
+    from qreader import QReader
+    HAS_QREADER = True
+except Exception:
+    QReader = None
+    HAS_QREADER = False
+
 import cv2
 
 
@@ -76,17 +84,20 @@ def get_codinate_from_pdf(path="", label="Memorial descritivo de transporte"):
 
 def get_value_from_table(path="", label=""):
 
-    cordinates = get_codinate_from_pdf(path, label="Memorial descritivo de transporte")
+    cordinate_top_table = get_codinate_from_pdf(path, label="Espécies e seus correspondentes volumes")
+    cordinate_bottom_table = get_codinate_from_pdf(path, label="Unidade") if get_codinate_from_pdf(path, label="Unidade")['y'] > 0 else get_codinate_from_pdf(path, label="Memorial descritivo de transporte")
 
-    bottom_cordinate = cordinates['y']-10
+    # localização das tabelas dos lotes na GF
+    top_cordinate = cordinate_top_table['y']+10 # parte superior da tabela
+    bottom_cordinate = cordinate_bottom_table['y'] # parte inferior da tabela
+
 
     table = read_pdf(
         path, pages="1",
-        encoding="utf-8",
-        area=[439.8, 36.9, bottom_cordinate, 552.1],
-        columns=[36.2, 180.6, 297.4, 360.9, 425.1, 496.3, 552.8],
+        encoding="latin-1",
+        area=[top_cordinate, 36.9, bottom_cordinate, 552.1],
+        columns=[36.2, 180.6, 297.4, 360.9, 425.1, 496.3, 552.8]
     )[0]
-
     column = table[label].dropna()
 
 
@@ -128,9 +139,9 @@ def get_value_from_table(path="", label=""):
 
             for index in range(0, len(column.tolist())-1, 2):
                 if len(column.tolist()) % 2 == 0:
-                    lote_from_line = f"({column[index]+column[index+1]}) "
+                    lote_from_line = f"{column[index]+column[index+1]}| "
                 else:
-                    lote_from_line = f"({column[index] + column[index + 1]} + {column[index + 2]}) "
+                    lote_from_line = f"|{column[index] + column[index + 1]} + {column[index + 2]} " 
 
                 lotes_from_page+=lote_from_line
                 lote_from_line = ""
@@ -214,21 +225,61 @@ def validade_url(url_string: str) -> bool:
     return  result
 
 def read_qr(file, from_image_file):
-    # Create a QReader instance
-    qreader = QReader()
+    # If qreader (pyzbar wrapper) is available use it; otherwise use OpenCV as fallback
+    if HAS_QREADER:
+        # Create a QReader instance
+        qreader = QReader()
 
-    if from_image_file == True:
-        # Get the image that contains the QR code
-        image = cv2.cvtColor(cv2.imread(file), cv2.COLOR_RGB2BGR)
-    else:
-        image = cv2.cvtColor(numpy.array(file), cv2.COLOR_RGB2BGR)
+        if from_image_file == True:
+            # Get the image that contains the QR code (cv2.imread returns BGR)
+            image = cv2.imread(file)
+        else:
+            # Convert PIL Image or array-like to BGR for OpenCV
+            image = numpy.array(file)
+            # If image appears to be RGB (PIL -> numpy), convert to BGR
+            if image.shape[-1] == 3:
+                image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
-    # Use the detect_and_decode function to get the decoded QR data
-    decoded_text = qreader.detect_and_decode(image=image)
+        # Use the detect_and_decode function to get the decoded QR data
+        decoded_text = qreader.detect_and_decode(image=image)
 
-    if len(decoded_text) == 1:
-        return decoded_text[0]
-    else:
+        if isinstance(decoded_text, (list, tuple)) and len(decoded_text) >= 1:
+            return decoded_text[0]
+        elif isinstance(decoded_text, str) and decoded_text:
+            return decoded_text
+        else:
+            return None
+
+    # Fallback using OpenCV's QRCodeDetector (no native zbar dependency)
+    try:
+        detector = cv2.QRCodeDetector()
+
+        if from_image_file == True:
+            img = cv2.imread(file)
+        else:
+            img = numpy.array(file)
+            # convert RGB->BGR if needed
+            if img is not None and img.ndim == 3 and img.shape[-1] == 3:
+                img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+
+        if img is None:
+            return None
+
+        # Try multi decode first (OpenCV 4.7+), otherwise single decode
+        if hasattr(detector, 'detectAndDecodeMulti'):
+            ok, decoded_infos, points, straight_qrcodes = detector.detectAndDecodeMulti(img)
+            if ok and decoded_infos:
+                # return first non-empty result
+                for d in decoded_infos:
+                    if d:
+                        return d
+                return None
+        # single
+        data, points, _ = detector.detectAndDecode(img)
+        if data:
+            return data
+        return None
+    except Exception:
         return None
 
 
