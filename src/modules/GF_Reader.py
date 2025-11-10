@@ -127,7 +127,7 @@ class GF_Reader:
         
                 if len(date) >= 1 or len(hour) >= 1:
                     return {
-                        "Data Emissão":date[-1] + " " + hour[-1]
+                        "Data Emissão":date[-1]
                     }
                  
                 else:
@@ -197,7 +197,7 @@ class GF_Reader:
 
 
 
-    def get_remetente_ou_destinatario(self, page, option= "Remetente" or "Destinatário"):
+    def get_remetente_ou_destinatario(self, pages, option= "Remetente" or "Destinatário"):
 
         self.cnpj = CNPJ()
         self.cpf = CPF()
@@ -207,13 +207,13 @@ class GF_Reader:
             nome_remetente = []
 
             data = {
-                "Cnpj_Cpf": '',
-                "Remetente": ''
+                "cnpj_cpf": '',
+                "remetente": ''
             }
 
             try:
                
-                for pg in page:
+                for pg in pages:
                     remetente = re.search(option + ":", pg)
                     ie = re.search("Inscrição Estadual", pg)
 
@@ -225,15 +225,15 @@ class GF_Reader:
 
                         nome_remetente.append(get_nome_remetente_ou__nome_destinatario(pg[remetente.end(): ie.start()]))
 
-                data["Remetente"] = sorted(set(nome_remetente))[-1]
-                data["Cnpj_Cpf"] = sorted(set(cnpj_cpf_list))[-1]
+                data["remetente"] = sorted(set(nome_remetente))[-1]
+                data["cnpj_cpf"] = sorted(set(cnpj_cpf_list))[-1]
 
                 return data
             except:
 
                 return {
-                "Cnpj_Cpf": '',
-                "Remetente": ''
+                "cnpj_cpf": '',
+                "remetente": ''
             }
 
 
@@ -242,12 +242,12 @@ class GF_Reader:
             nome_destinatario = []
 
             data = {
-                "Cnpj_Cpf": [],
-                "Destinatário": []
+                "cnpj_cpf": [],
+                "destinatário": []
             }
 
             try:
-                for pg in page:
+                for pg in pages:
                     destinatario_area = re.search(option + ":", pg)
 
                     if destinatario_area is not None:
@@ -263,20 +263,20 @@ class GF_Reader:
 
                         nome_destinatario.append(get_nome_remetente_ou__nome_destinatario(destinatario_area_after_laber[: ie.start()]))
 
-                data["Destinatário"] = sorted(set(nome_destinatario))[-1]
-                data["Cnpj_Cpf"] = sorted(set(cnpj_cpf_list))[-1]
+                data["destinatário"] = sorted(set(nome_destinatario))[-1]
+                data["cnpj_cpf"] = sorted(set(cnpj_cpf_list))[-1]
 
                 return data
             except Exception as e:
                 return {
-                    "Cnpj_Cpf": '',
-                    "Destinatário": ''
+                    "cnpj_cpf": '',
+                    "destinatário": ''
                 }
         
         else:
            {
-               "Cnpj_Cpf": '',
-                "Destinatário": ''
+               "cnpj_cpf": '',
+                "destinatário": ''
            }
 
 
@@ -286,55 +286,4 @@ class GF_Reader:
             links.append(get_link_from_gf(file, index, from_image_file=False))
         return links
 
-
-    def get_values(self,links_sema=False, lote=False, produto=False, essencia=False, placa=False):
-        docs = self.get_docs()
-        pages = self.get_pages_from_docs(docs)
-
-        try:
-            data_emissao = self.get_datetime(pages, label="Data de Emissão")
-            data_validade = self.get_datetime(pages, label="Data de Validade no Estado")
-
-            remetente = self.get_remetente_ou_destinatario(pages, option="Remetente")
-            destinatario = self.get_remetente_ou_destinatario(pages, option="Destinatário")
-
-
-            self.Gf["Guia de Transporte"] = self.get_by_label(pages, label="Guia de Transporte")
-            self.Gf["Chave de Acesso da NFe"] = self.get_by_label(pages, label="Chave de Acesso da NFe")
-            self.Gf["Protocolo"] = self.get_by_label(pages, label="Protocolo")
-            self.Gf["Nome Remetente"] = remetente["remetente"]
-            self.Gf["CNPJ/CPF Remetente"] = remetente["cnpj_cpf"]
-            self.Gf["Nome Destinatário"] = destinatario["destinatário"]
-            self.Gf["CNPJ/CPF Destinatário"] = destinatario["cnpj_cpf"]
-            self.Gf["Data de Emissão"] = data_emissao['data']
-            self.Gf["Hora de Emissão"] = data_emissao['hora']
-            self.Gf["Data de Validade no Estado"] = data_validade["data"]
-            self.Gf["Hora de Validade no Estado"] = data_validade["hora"]
-
-            self.Gf['Volume'] = self.read_table_from_pdf(label="Volume")
-            self.Gf['Preço Unitário'] = self.read_table_from_pdf(label="Preço Unitário")
-            self.Gf['Preço Total'] = self.read_table_from_pdf(label="Preço Total")
-
-            if links_sema == True:
-                self.Gf['Link de acesso Sema'] = self.get_gf_link()
-
-            if placa == True:
-                self.Gf['Placa 1'] = self.get_placa(pages, "Placa 1")
-                self.Gf['Placa 2'] = self.get_placa(pages, "Placa 2")
-                self.Gf['Placa 3'] = self.get_placa(pages, "Placa 3")
-                self.Gf['Placa 4'] = self.get_placa(pages, "Placa 4")
-
-            if essencia == True:
-                self.Gf["Essência"] = self.read_table_from_pdf(label="Essência")
-            if produto == True:
-                self.Gf["Produto"] = self.read_table_from_pdf(label="Produto")
-            if lote == True:
-                self.Gf["Lote"] = self.read_table_from_pdf(label="Lote")
-
-
-            return self.Gf
-        except:
-
-            return {"null":[]}
-
-
+        

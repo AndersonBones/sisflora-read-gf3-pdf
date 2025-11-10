@@ -84,80 +84,90 @@ def get_codinate_from_pdf(path="", label="Memorial descritivo de transporte"):
 
 def get_value_from_table(path="", label=""):
 
-    cordinate_top_table = get_codinate_from_pdf(path, label="Espécies e seus correspondentes volumes")
-    cordinate_bottom_table = get_codinate_from_pdf(path, label="Unidade") if get_codinate_from_pdf(path, label="Unidade")['y'] > 0 else get_codinate_from_pdf(path, label="Memorial descritivo de transporte")
+    try:
+        cordinate_top_table = get_codinate_from_pdf(path, label="Espécies e seus correspondentes volumes")
+        cordinate_bottom_table = get_codinate_from_pdf(path, label="Unidade") if get_codinate_from_pdf(path, label="Unidade")['y'] > 0 else get_codinate_from_pdf(path, label="Memorial descritivo de transporte")
 
-    # localização das tabelas dos lotes na GF
-    top_cordinate = cordinate_top_table['y']+10 # parte superior da tabela
-    bottom_cordinate = cordinate_bottom_table['y'] # parte inferior da tabela
-
-
-    table = read_pdf(
-        path, pages="1",
-        encoding="latin-1",
-        area=[top_cordinate, 36.9, bottom_cordinate, 552.1],
-        columns=[36.2, 180.6, 297.4, 360.9, 425.1, 496.3, 552.8]
-    )[0]
-    column = table[label].dropna()
+        # localização das tabelas dos lotes na GF
+        top_cordinate = cordinate_top_table['y']+10 # parte superior da tabela
+        bottom_cordinate = cordinate_bottom_table['y'] # parte inferior da tabela
 
 
-    match label:
+        table = read_pdf(
+            path, pages="1",
+            encoding="latin-1",
+            area=[top_cordinate, 35, bottom_cordinate, 553],
+            columns=[35, 180.6, 297.4, 360.9, 425.1, 496.3, 553]
+        )[0]
+        column = table[label].dropna()
 
-        case "Volume":
-            column = column.str.replace(",", ".")
-            column = column.astype(float).fillna(0.0).tolist()
 
-            return sum(column)
+        match label:
+
+            case "Volume":
+                column = column.str.replace(",", ".")
+                column = column.astype(float).fillna(0.0).tolist()
+
+                return column
 
 
-        case "Preço Unitário":
-            column = column.str.replace("R$", "")
-            column = column.str.replace(",", ".", 1)
-            column = column.astype(float).fillna(0.0).tolist()
+            case "Preço Unitário":
+                column = column.str.replace("R$", "")
+                column = column.str.replace(",", ".", 1)
+                column = column.astype(float).fillna(0.0).tolist()
 
-            return sum(column) / len(column)
+                return sum(column) / len(column)
 
-        case "Preço Total":
+            case "Preço Total":
 
-            column = column.str.replace(".", "")
+                column = column.str.replace(".", "")
 
-            column = column.str.replace(",", ".")
+                column = column.str.replace(",", ".")
 
-            column = column.str.cat().split("R$")
-            column.remove("")
+                column = column.str.cat().split("R$")
+                column.remove("")
 
-            df = pd.DataFrame({label: column}).astype(float).fillna(0.0)
+                df = pd.DataFrame({label: column}).astype(float).fillna(0.0)
 
-            df_list = df[label].to_list()
+                df_list = df[label].to_list()
 
-            return sum(df_list)
+                return sum(df_list)
 
-        case "Lote":
+            case "Lote":
 
-            lote_from_line = ""
-            lotes_from_page=""
+                essencia = table["Essência"].dropna()               
 
-            
-            for index in range(0, len(column.tolist())-1, 2):
-                if len(column.tolist()) % 2 == 0:
-                    lote_from_line = f"{column[index]+column[index+1]}| "
+                lotes = column.str.cat(sep="#").split("#")
+
+                for index, value in enumerate(lotes):
+                    if index not in essencia.index:
+                        lotes[index-1] += " "+lotes[index]
+                        lotes[index] = ""
+                
+
+                if "" in lotes:
+                    lotes_filtered = list(filter(None, lotes))
+                    return "#".join(lotes_filtered)
                 else:
-                    lote_from_line = f"|{column[index] + column[index + 1]} + {column[index + 2]} " 
-
-                lotes_from_page+=lote_from_line
-                lote_from_line = ""
-
-            return lotes_from_page
+                    return "#".join(lotes)
+                    
 
 
 
-        case "Essência":
-            return column.str.cat(sep=" / ")
+            case "Essência":
+                return column.str.cat(sep="/")
 
 
-        case "Produto":
-            return column.str.cat(sep=" / ")
+            case "Produto":
+                return column.str.cat(sep="/")
+    except:
+        return "null"
 
+
+def get_tipo_lote(lote=""):    
+    lote = re.sub(r'[^a-zA-ZÀ-ÿ#\s]', '', lote)
+    lote = re.sub(r'\s+', ' ', lote).strip()
+    return lote
 
 
 
