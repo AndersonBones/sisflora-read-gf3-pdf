@@ -53,7 +53,7 @@ def placa_validate(placa) -> bool:
         return False
 
 
-def get_codinate_from_pdf(path="", label="Memorial descritivo de transporte"):
+def get_codinate_from_pdf(path="", label="Memorial descritivo de transporte", num_pages=0):
     try:
         # Create a PdfDocument object
         doc = PdfDocument()
@@ -62,7 +62,7 @@ def get_codinate_from_pdf(path="", label="Memorial descritivo de transporte"):
         doc.LoadFromFile(path)
 
         # Get a specific page
-        page = doc.Pages[0]
+        page = doc.Pages[num_pages-1]
 
         # Create a PdfTextFinder object
         textFinder = PdfTextFinder(page)
@@ -105,10 +105,13 @@ def get_value_from_table(path="", label=""):
         match label:
 
             case "Volume":
+                # Substituir vírgulas por pontos e converter para números
                 column = column.str.replace(",", ".")
-                column = column.astype(float).fillna(0.0).tolist()
-
-                return column
+                
+                # Converter para float, formatar com 2 decimais e juntar com #
+                column = pd.to_numeric(column, errors='coerce').fillna(0.0)
+                formatted_values = [f"{x:.2f}" for x in column]
+                return "#".join(formatted_values)
 
 
             case "Preço Unitário":

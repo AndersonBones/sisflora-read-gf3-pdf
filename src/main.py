@@ -52,8 +52,10 @@ def run_read_pdf(path="", file_name=""):
         essencias.append(essencia)
 
         tipo_lote.append(get_tipo_lote(lote))
+        
 
-        print(f"Pasta: {os.path.basename(path)} - Index: {i} - File: {os.path.basename(file)} - N° GF:{gf} Lote: {lote.split('#')} - Volume: {qtde_gf}")
+        print(f"Pasta: {os.path.basename(path)} - Index: {i} - File: {os.path.basename(file)} - N° GF:{gf} Lote: {lote.split('#')} - Volume: {qtde.split('#')}")
+     
         doc.close()
 
    
@@ -72,7 +74,7 @@ def run_read_pdf(path="", file_name=""):
     df = pd.DataFrame(data)
 
 
-    df.to_excel(fr"C:\Users\anderson.ebones\Desktop\Py\sisflora-read-gf3-pdf\src\docs\Relatorios\{file_name}", index=False, engine="xlsxwriter")
+    df.to_excel(fr"F:\BIOMASSA\03. Originação\06. Guias Florestais\Relatorios\com volume\{file_name}", index=False, engine="xlsxwriter")
 
     end_time = time.time()
     elapsed_time = end_time - start_time
@@ -82,20 +84,20 @@ def run_read_pdf(path="", file_name=""):
 
 
 
-path1 = r"C:\Users\anderson.ebones\Desktop\Py\2024\SRS - OK\11 - OK"
-path2 = r"C:\Users\anderson.ebones\Desktop\Py\2024\SRS - OK\09 - OK"
+# path1 = r"C:\Users\anderson.ebones\Desktop\Py\2025\SRS - OK\06 - OK"
+path2 = r"F:\BIOMASSA\03. Originação\06. Guias Florestais\2024 - OK\SRS - OK\10 - OK"
 
 # Cria as dois threads
-thr1 = Thread(target=run_read_pdf, args=[path1, "srs_11_2024.xlsx"])
-#thr2 = Thread(target=run_read_pdf, args=[path2, "srs_09_2024.xlsx"])
+# thr1 = Thread(target=run_read_pdf, args=[path1, "srs_06_2025.xlsx"])
+thr2 = Thread(target=run_read_pdf, args=[path2, "srs_10_2024.xlsx"])
 
 
 # Inicia as dois threads
-thr1.start()
-#thr2.start()
+# thr1.start()
+thr2.start()
 
 # Espera todas terminarem
-thr1.join()
-#thr2.join()
+# thr1.join()
+thr2.join()
 
    
