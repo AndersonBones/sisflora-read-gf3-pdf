@@ -62,7 +62,7 @@ def get_codinate_from_pdf(path="", label="Memorial descritivo de transporte", nu
         doc.LoadFromFile(path)
 
         # Get a specific page
-        page = doc.Pages[num_pages-1]
+        page = doc.Pages[num_pages]
 
         # Create a PdfTextFinder object
         textFinder = PdfTextFinder(page)
@@ -83,9 +83,9 @@ def get_codinate_from_pdf(path="", label="Memorial descritivo de transporte", nu
 
 
 def get_value_from_table(path="", label=""):
-
+    
     try:
-        cordinate_top_table = get_codinate_from_pdf(path, label="Espécies e seus correspondentes volumes")
+        cordinate_top_table = get_codinate_from_pdf(path, label="Espécies e seus correspondentes volumes:")
         cordinate_bottom_table = get_codinate_from_pdf(path, label="Unidade") if get_codinate_from_pdf(path, label="Unidade")['y'] > 0 else get_codinate_from_pdf(path, label="Memorial descritivo de transporte")
 
         # localização das tabelas dos lotes na GF
@@ -94,23 +94,26 @@ def get_value_from_table(path="", label=""):
 
 
         table = read_pdf(
-            path, pages="1",
+            path, 
+            pages="1",
             encoding="latin-1",
             area=[top_cordinate, 35, bottom_cordinate, 553],
             columns=[35, 180.6, 297.4, 360.9, 425.1, 496.3, 553]
         )[0]
         column = table[label].dropna()
-
-
+        
         match label:
+
 
             case "Volume":
                 # Substituir vírgulas por pontos e converter para números
                 column = column.str.replace(",", ".")
-                
+                    
                 # Converter para float, formatar com 2 decimais e juntar com #
                 column = pd.to_numeric(column, errors='coerce').fillna(0.0)
                 formatted_values = [f"{x:.2f}" for x in column]
+                
+
                 return "#".join(formatted_values)
 
 
@@ -146,26 +149,26 @@ def get_value_from_table(path="", label=""):
                     if index not in essencia.index:
                         lotes[index-1] += " "+lotes[index]
                         lotes[index] = ""
-                
+                    
 
                 if "" in lotes:
                     lotes_filtered = list(filter(None, lotes))
                     return "#".join(lotes_filtered)
                 else:
                     return "#".join(lotes)
-                    
+                        
 
 
 
             case "Essência":
                 return column.str.cat(sep="/")
 
-
             case "Produto":
                 return column.str.cat(sep="/")
-    except:
+            
+            
+    except Exception as e:
         return "null"
-
 
 def get_tipo_lote(lote=""):    
     lote = re.sub(r'[^a-zA-ZÀ-ÿ#\s]', '', lote)

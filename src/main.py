@@ -22,6 +22,8 @@ def run_read_pdf(path="", file_name=""):
     dest_nome = []
     num_gf = []
     qtde_gf = []
+    chaves = []
+    nf = []
     i = 0
     
     start_time = time.time()
@@ -42,12 +44,17 @@ def run_read_pdf(path="", file_name=""):
         dest_cnpj.append(gf_reader.get_remetente_ou_destinatario(pages,"Destinatário")["cnpj_cpf"])
         rem_nome.append(gf_reader.get_remetente_ou_destinatario(pages,"Remetente")["remetente"])
         dest_nome.append(gf_reader.get_remetente_ou_destinatario(pages,"Destinatário")["destinatário"])
-        
+
+        chave_nf = gf_reader.get_by_label(pages, "Chave de Acesso da NFe")
+        chaves.append(chave_nf) 
+        nf.append(chave_nf[25:34])  # Extrai o número da NF da chave de acesso
+
         lote = get_value_from_table(file, label="Lote")
         essencia = get_value_from_table(file, label="Essência")
         qtde = get_value_from_table(file, label="Volume")
         qtde_gf.append(qtde)
-    
+
+
         lotes.append(lote)
         essencias.append(essencia)
 
@@ -60,21 +67,22 @@ def run_read_pdf(path="", file_name=""):
 
    
     
-    data = {'N° GF':num_gf,
+    data = {
+            "N° NF":nf,
+            "Chave NFe":chaves,
+            'N° GF':num_gf,
             "Data Emissão":data_emissao,
             'Nome Remetente': rem_nome,
-            'Nome Destinatário': dest_nome,
             'CNPJ Remetente': rem_cnpj,
-            'CNPJ Destinatário':dest_cnpj,
-            'Lote':lotes,
+             'Nome Destinatário': dest_nome,
+             'CNPJ Destinatário':dest_cnpj,
             "Tipo Lote":tipo_lote,
-            "Essência":essencias,
             "Volume":qtde_gf
             }
     df = pd.DataFrame(data)
 
 
-    df.to_excel(fr"F:\BIOMASSA\03. Originação\06. Guias Florestais\Relatorios\com volume\{file_name}", index=False, engine="xlsxwriter")
+    df.to_excel(fr"{file_name}", index=False, engine="xlsxwriter")
 
     end_time = time.time()
     elapsed_time = end_time - start_time
