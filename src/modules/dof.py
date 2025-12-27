@@ -116,7 +116,7 @@ if __name__ == "__main__":
     rem_chave = []
     rem_nf = []
     
-    caminho_pdf = r"F:\BIOMASSA\03. Originação\06. Guias Florestais\DOFs - PARÁ\2025\02"  # ajuste o caminho se necessário
+    caminho_pdf = r"F:\BIOMASSA\03. Originação\06. Guias Florestais\DOFs - PARÁ\2025\12"  # ajuste o caminho se necessário
     for file in glob.glob(os.path.join(caminho_pdf, "*.pdf")):
         
         info = extrair_dof(file)
@@ -139,7 +139,7 @@ if __name__ == "__main__":
         cod_rastreio_row = []
         volume_row = []
         for item in info["itens"]:
-                #print(f"  Código: {item['codigo_rastreio']}  |  "f"Qtd (m³): {item['quantidade_m3']} (texto: {item['quantidade_str']})")
+                print(f"  Código: {item['codigo_rastreio']}  |  "f"Qtd (m³): {item['quantidade_m3']} (texto: {item['quantidade_str']})")
                 
                 item['codigo_rastreio'] = re.sub(r'[^A-Za-zÀ-ÿ]', '', item['codigo_rastreio'])
                 cod_rastreio_row.append(item['codigo_rastreio'])
@@ -179,5 +179,5 @@ if __name__ == "__main__":
      }
 
 df = pd.DataFrame(data)
-df.to_excel("2025_03_para.xlsx", index=False, engine="xlsxwriter")    
+df.to_excel("2025_12_para.xlsx", index=False, engine="xlsxwriter")    
       

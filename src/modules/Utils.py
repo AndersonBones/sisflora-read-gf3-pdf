@@ -109,9 +109,9 @@ def get_value_from_table(path="", label=""):
                 # Substituir vírgulas por pontos e converter para números
                 column = column.str.replace(",", ".")
                     
-                # Converter para float, formatar com 2 decimais e juntar com #
+                # Converter para float, formatar com 3 decimais e juntar com #
                 column = pd.to_numeric(column, errors='coerce').fillna(0.0)
-                formatted_values = [f"{x:.2f}" for x in column]
+                formatted_values = [f"{x:.3f}" for x in column]
                 
 
                 return "#".join(formatted_values)
